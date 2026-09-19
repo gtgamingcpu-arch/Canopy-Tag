@@ -482,7 +482,7 @@ function updateDesktopPreview(dt) {
   if (renderer.xr.isPresenting) return;
   camera.rotation.set(pitch, yaw, 0, 'YXZ');
   const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
-  const right = new THREE.Vector3(forward.z, 0, -forward.x);
+  const right = new THREE.Vector3(-forward.z, 0, forward.x);
   const speed = 6 * dt;
   if (keys['KeyW']) dolly.position.addScaledVector(forward, speed);
   if (keys['KeyS']) dolly.position.addScaledVector(forward, -speed);
