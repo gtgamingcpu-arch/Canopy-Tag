@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Canopy Tag — a Gorilla Tag fangame</title>
+<style>
+  :root{
+    --moss: #33472f;
+    --moss-dark: #1f2e1c;
+    --bark: #5c4632;
+    --bark-dark: #3a2c1f;
+    --amber: #e0a83a;
+    --cream: #f2efe0;
+    --mist: rgba(20,28,18,0.55);
+  }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background: radial-gradient(ellipse at 50% 20%, #29391f 0%, #101a0d 70%);
+    color: var(--cream);
+    font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+    overflow: hidden;
+  }
+  canvas{ display:block; }
+
+  #overlay{
+    position: fixed; inset: 0;
+    display:flex; align-items:center; justify-content:center;
+    z-index: 20;
+    background:
+      linear-gradient(var(--mist), var(--mist)),
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.08) 0 2px, transparent 2px 40px);
+  }
+  #panel{
+    width: min(520px, 90vw);
+    background: linear-gradient(180deg, rgba(37,51,31,0.92), rgba(20,28,17,0.95));
+    border: 1px solid rgba(224,168,58,0.35);
+    border-radius: 14px;
+    padding: 32px 34px 28px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.55);
+  }
+  #panel h1{
+    margin: 0 0 4px;
+    font-size: 30px;
+    letter-spacing: 0.5px;
+    color: var(--cream);
+    font-weight: 700;
+  }
+  #panel .tagline{
+    margin: 0 0 22px;
+    color: #b9c7ad;
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+  .mode-row{
+    display:flex; gap:12px; margin-bottom: 18px;
+  }
+  .mode-btn{
+    flex:1;
+    background: rgba(0,0,0,0.25);
+    border: 1.5px solid rgba(224,168,58,0.25);
+    color: var(--cream);
+    border-radius: 10px;
+    padding: 14px 10px;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .mode-btn b{ display:block; font-size: 16px; margin-bottom: 3px; color: var(--amber); }
+  .mode-btn span{ font-size: 12.5px; color: #b9c7ad; line-height: 1.4; }
+  .mode-btn.selected{
+    border-color: var(--amber);
+    background: rgba(224,168,58,0.12);
+  }
+  .mode-btn:hover{ border-color: rgba(224,168,58,0.6); }
+
+  #vr-slot{ margin: 6px 0 14px; display:flex; justify-content:center; }
+  #vr-slot button{
+    width: 100%;
+    padding: 14px !important;
+    border-radius: 10px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    background: var(--amber) !important;
+    color: #2a2005 !important;
+    border: none !important;
+  }
+  #novr-msg{
+    font-size: 13px; color: #d99; text-align:center; margin-top: 6px; display:none;
+  }
+  #instructions{
+    border-top: 1px solid rgba(224,168,58,0.2);
+    margin-top: 8px; padding-top: 14px;
+    font-size: 13px; color: #b9c7ad; line-height: 1.6;
+  }
+  #instructions b{ color: var(--cream); }
+
+  /* in-VR HUD, shown via dom-overlay */
+  #hud{
+    position: fixed; inset:0; pointer-events:none; z-index: 10; display:none;
+  }
+  #hud-top{
+    position:absolute; top: 22px; left: 50%; transform: translateX(-50%);
+    background: rgba(15,20,12,0.65);
+    border: 1px solid rgba(224,168,58,0.4);
+    border-radius: 10px;
+    padding: 8px 22px;
+    font-size: 16px;
+    text-align:center;
+    min-width: 240px;
+  }
+  #hud-top .label{ font-size: 11px; letter-spacing:1px; color: var(--amber); }
+  #hud-status{
+    position:absolute; top: 90px; left:50%; transform:translateX(-50%);
+    font-size: 20px; font-weight:700; text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    opacity:0; transition: opacity 0.4s;
+  }
+  #exit-btn{
+    position:absolute; bottom: 26px; left:50%; transform:translateX(-50%);
+    background: rgba(15,20,12,0.7); border:1px solid rgba(224,168,58,0.4);
+    color: var(--cream); border-radius: 8px; padding: 8px 18px; font-size: 13px;
+    pointer-events:auto; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+  <div id="overlay">
+    <div id="panel">
+      <h1>Canopy Tag</h1>
+      <p class="tagline">A fangame inspired by Gorilla Tag. Grip your controllers and pull yourself through the trees — no thumbsticks, just arms.</p>
+
+      <div class="mode-row">
+        <div class="mode-btn selected" data-mode="casual">
+          <b>Casual</b>
+          <span>Free roam the forest, collect bananas, no pressure.</span>
+        </div>
+        <div class="mode-btn" data-mode="infection">
+          <b>Infection Tag</b>
+          <span>One gorilla starts infected. Get tagged and you're it too. Survive.</span>
+        </div>
+      </div>
+
+      <div id="vr-slot"></div>
+      <div id="novr-msg">Your browser doesn't report WebXR support — open this page in the Oculus/Meta Quest Browser over HTTPS.</div>
+
+      <div id="instructions">
+        <b>In headset:</b> no buttons — just swing your arms like you're pulling yourself along, and you'll move the opposite way. Stop moving your hands to coast to a stop. There's no snap-turn: turn your real body to change direction, just like the real game.<br/><br/>
+        <b>On desktop (preview only):</b> WASD to move, drag mouse to look. This is just for testing layout — put on the headset for the real thing.
+      </div>
+    </div>
+  </div>
+
+  <div id="hud">
+    <div id="hud-top">
+      <div class="label" id="hud-mode-label">CASUAL</div>
+      <div id="hud-line">Bananas: 0</div>
+    </div>
+    <div id="hud-status"></div>
+    <button id="exit-btn">Exit to menu</button>
+  </div>
+
+<script async src="https://unpkg.com/es-module-shims@1.10.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="./canopy-tag.js"></script>
+</body>
+</html>
